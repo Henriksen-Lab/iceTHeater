@@ -3,6 +3,7 @@ import time
 import numpy as np
 import cmath
 from decimal import Decimal
+import matplotlib.pyplot as plt
 
 def get_T(R):
 	c1=[5.5582108,-6.41962,2.86239,-1.059453,0.328973,0.081621997,0.012647,0.00088100001,-0.001982,0.00099099998]
@@ -26,17 +27,23 @@ def get_T(R):
 		result = sum(ww80)
 	return Decimal(result.real).quantize(Decimal("0.00"))
 
-def open_equi_read():
+def open_equi_initial():
 	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
 	flag = keithley.is_open
 	#keithley.write(b"*idn? \r\n")
 	#keithley.write(b"status:measurement:enable 512; *sre 1 \r\n")
+	keithley.write(b"*rst")
 	keithley.write(b":SYST:BEEP:STAT OFF\r\n")
-	keithley.write(b"*cls \r\n")
-	keithley.write(b":SENS:FUNC 'RESistance' \r\n")
-	keithley.write(b":SENS:RESistance:RANGE:Auto 1 \r\n")
-	keithley.write(b":READ?\r\n")
+	keithley.write(b"*cls\r\n")
+	keithley.write(b":SENS:FUNC 'RESistance'\r\n")
+	keithley.write(b":SENS:RESistance:RANGE:Auto 1\r\n")
+	time.sleep(1)
+	keithley.close()
 
+def open_equi_read():
+	
+	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
+	keithley.write(b":MEAS:RESistance?\r\n")
 	time.sleep(1)
 	out = ''
 	read = 0
@@ -60,7 +67,8 @@ def open_arduino_write(t):
 	else:
 		tt = "CG "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
-	#print(bytes(tt,'utf-8'))
+	'''for x in(bytes(tt,'utf-8')):
+		print (x)'''
 	arduino.close()
 
 def open_arduino_set(t):
@@ -74,15 +82,39 @@ def open_arduino_set(t):
 	else:
 		tt = "CS "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
-	#print(bytes(tt,'utf-8'))
+	'''for x in(bytes(tt,'utf-8')):
+			print (x)'''
 	arduino.close()
-
-
+	
+def read_arduino():
+	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	flag = arduino.is_open
+	out = ''
+	read = 0
+	while arduino.inWaiting() > 0:
+		out += arduino.read().decode("ascii")
+	if out != '':
+		read = out
+	print (out)
+	arduino.close()
+	
+	
 set_temp = Decimal(float(input("Set temp:"))).quantize(Decimal("0.00"))
-open_arduino_set(set_temp)
+open_equi_initial()
+
+plt.ion()
+plt.figure(1)
+plt.title("Set point = " + str(set_temp) + "K")
+plt.xlabel("time(s)")
+plt.ylim(0,310)
+plt.ylabel("Temp(K)")
+t_now = time.time()
 while 1:
 	temp = open_equi_read()
-	print(time.asctime(time.localtime(time.time())),"\nTemp is ",temp,"K")
-	time.sleep(1)
+	open_arduino_set(set_temp)
+	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
+	plt.plot(time.time()-t_now,temp,'.r')
+	plt.pause(0.5)
 	open_arduino_write(temp)
 	time.sleep(0.5)
+	#read_arduino()

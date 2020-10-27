@@ -1,13 +1,15 @@
 //Written by Jeff Ahlers 6/21/2020
 #include <PID_v1.h>
-
+#define RelayPin 6
 //Define Variables we'll be connecting to
 double Setpoint, GetPoint, Input, Output;
 
 //Specify the links and initial tuning parameters
 //No idea if the default Kp Ki Kd are correct
-double aggKp = .1, aggKi = .1, aggKd = 10;
-double consKp = 50, consKi = .1, consKd = 1;
+double aggKp = 4, aggKi = .2, aggKd = 1; 
+//double aggKp = .1, aggKi = .1, aggKd = 10;
+double consKp = 1, consKi = .05, consKd = 0.25;
+//double consKp = 50, consKi = .1, consKd = 1;
 
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
@@ -19,6 +21,7 @@ unsigned long statusThen = millis();
 
 unsigned long computeNow = millis();
 unsigned long computeThen = millis();
+bool heaterState = false;
 
 enum SerialState
 {
@@ -47,19 +50,21 @@ CommandState commandState = noCommand;
 int i = 0;
 void setup()
 {
-  Setpoint = 0;
-  GetPoint = 0;
+  pinMode(RelayPin, OUTPUT);
+  Setpoint = 166;
+  GetPoint = 165;
   Input = GetPoint;
   myPID.SetOutputLimits(0, 100);
   //Turn the PID on
   myPID.SetMode(AUTOMATIC);
   Serial.begin(9600);
+  digitalWrite(RelayPin, LOW);
 }
 
 void loop()
 {
   computeNow = millis();
-  if (computeNow >= computeThen + 200)
+  if (computeNow >= computeThen + 3000)
   {
     Input = GetPoint;
     if (Input - Setpoint >= 0)
@@ -74,7 +79,7 @@ void loop()
       myPID.SetTunings(aggKp, aggKi, aggKd);
     }
     myPID.Compute();
-    computeThen = computeNow;
+    computeThen = computeNow;  
   }
   slowPWM(Output);
   manageSerial();
@@ -97,14 +102,30 @@ void loop()
 //Low frequency PWM for the solid state relay
 void slowPWM(double setPer)
 {
+  /* 
+   double windowsize = 1000;
+  double onTime = windowsize * setPer / 100;
+  now = millis();
+  if (now >= then + onTime && heaterState) {
+    //Turn heater off
+    digitalWrite(RelayPin, LOW);
+    heaterState = false;
+  } else if (now >= then + windowsize) {
+    //Turn heater on
+    digitalWrite(RelayPin, HIGH);
+    heaterState = true;
+    then = now;  
+  }
+  */
 }
 void manageSerial(){
-  //Valid command format "CS ###.##E". Example: "CS 090.3E" for temperature setpoint of 90.3 C
+  //Valid command format "CS ###.##E". Example: "CS 090.30E" for temperature setpoint of 90.30 C
   //Commands:
   // CS: Set temp
   // CG: Input temp
   if (Serial.available() > 0)
   {
+    delay(100);
     switch (state)
     {
     case idle:
