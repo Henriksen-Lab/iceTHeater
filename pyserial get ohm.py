@@ -52,7 +52,7 @@ def open_arduino_write(t):
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	tt = "CG "+ str(t) + ".XE"
+	tt = "CG "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
 	arduino.close()
 
@@ -60,7 +60,7 @@ def open_arduino_set(t):
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	tt = "CS "+ str(t) + ".XE"
+	tt = "CS "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
 	arduino.close()
 
