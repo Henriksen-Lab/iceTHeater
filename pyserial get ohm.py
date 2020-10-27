@@ -43,22 +43,33 @@ def open_equi_read():
 		out += keithley.read().decode("ascii")
 	if out != '':
 		read = float(out)
-	print ("Resistance is ", read, "Ohm")
-	print ("Temp is ", get_T(read),"K")
+	#print ("Resistance is ", read, "Ohm")
+	#print ("Temp is ", get_T(read),"K")
 	keithley.close()
 	return get_T(read)
-
+	
 def open_arduino_write(t):
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	tt = b"t"
-	arduino.write(tt)
+	tt = "CG "+ str(t) + ".XE"
+	arduino.write(bytes(tt,'utf-8'))
 	arduino.close()
 
+def open_arduino_set(t):
+	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	flag = arduino.is_open
+	#print(t)
+	tt = "CS "+ str(t) + ".XE"
+	arduino.write(bytes(tt,'utf-8'))
+	arduino.close()
+
+
+set_temp = input("Set temp:")
+open_arduino_set(set_temp)
 while 1:
 	temp = open_equi_read()
 	print(time.asctime(time.localtime(time.time())),"\nTemp is ",temp,"K")
-	time.sleep(1.5)
+	time.sleep(1)
 	open_arduino_write(temp)
 	time.sleep(0.5)
