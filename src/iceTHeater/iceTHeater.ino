@@ -36,7 +36,7 @@ unsigned long statusThen = millis();
 unsigned long computeNow = millis();
 unsigned long computeThen = millis();
 
-enum serialState
+enum SerialState
 {
   idle,
   magic,
@@ -49,16 +49,16 @@ enum serialState
   finalizing
 };
 
-enum commandState
+enum CommandState
 {
-  idle,
+  noCommand,
   tempSet,
   tempGet
-}
+};
 
 double serialBufferReading = 0;
-serialState state = idle;
-commandState = idle;
+SerialState state = idle;
+CommandState commandState = noCommand;
 int i = 0;
 void setup()
 {
@@ -113,20 +113,20 @@ void loop()
       break;
     case magic:
       //Look for command type
-      serialBufferReading == Serial.read();
-      switch (serialBufferReading)
+      i = Serial.read();
+      switch (i)
       {
       case 83:
-        state = tempCon;
+        state = tempCom;
         commandState = tempSet;
         break;
       case 71:
-        state = tempCon;
+        state = tempCom;
         commandState = tempGet;
         break;
       default:
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         break;
       }
 
@@ -139,7 +139,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
       }
       break;
     //Look for digits with validation
@@ -154,7 +154,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         serialBufferReading = 0;
       }
       break;
@@ -168,7 +168,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         serialBufferReading = 0;
       }
       break;
@@ -182,7 +182,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         serialBufferReading = 0;
       }
       break;
@@ -194,7 +194,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         serialBufferReading = 0;
       }
       break;
@@ -208,7 +208,7 @@ void loop()
       else
       {
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
         serialBufferReading = 0;
       }
       break;
@@ -233,13 +233,13 @@ void loop()
         }
         serialBufferReading = 0;
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
       }
       else
       {
         serialBufferReading = 0;
         state = idle;
-        commandState = idle;
+        commandState = noCommand;
       }
       break;
     }
