@@ -2,6 +2,7 @@ import serial
 import time
 import numpy as np
 import cmath
+from decimal import Decimal
 
 def get_T(R):
 	c1=[5.5582108,-6.41962,2.86239,-1.059453,0.328973,0.081621997,0.012647,0.00088100001,-0.001982,0.00099099998]
@@ -23,7 +24,7 @@ def get_T(R):
 		for i in range(0,len(c80)):
 			ww80[i]= c80[i]*cmath.cos(i*cmath.acos(((cmath.log10(R)-1.72528854694)-(2.3131455111-cmath.log10(R)))/(2.3131455111-1.72528854694)))
 		result = sum(ww80)
-	return round(result.real, 2)
+	return Decimal(result.real).quantize(Decimal("0.00"))
 
 def open_equi_read():
 	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
@@ -52,20 +53,32 @@ def open_arduino_write(t):
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	tt = "CG "+ str(t) + "E"
+	if 10<t<100:
+		tt = "CG 0"+ str(t) + "E"
+	elif t<10:
+		tt = "CG 00"+ str(t) + "E"
+	else:
+		tt = "CG "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
+	#print(bytes(tt,'utf-8'))
 	arduino.close()
 
 def open_arduino_set(t):
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	tt = "CS "+ str(t) + "E"
+	if 10<t<100:
+		tt = "CS 0"+ str(t) + "E"
+	elif t<10:
+		tt = "CS 00"+ str(t) + "E"
+	else:
+		tt = "CS "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
+	#print(bytes(tt,'utf-8'))
 	arduino.close()
 
 
-set_temp = input("Set temp:")
+set_temp = Decimal(float(input("Set temp:"))).quantize(Decimal("0.00"))
 open_arduino_set(set_temp)
 while 1:
 	temp = open_equi_read()
