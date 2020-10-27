@@ -23,7 +23,7 @@ def get_T(R):
 		for i in range(0,len(c80)):
 			ww80[i]= c80[i]*cmath.cos(i*cmath.acos(((cmath.log10(R)-1.72528854694)-(2.3131455111-cmath.log10(R)))/(2.3131455111-1.72528854694)))
 		result = sum(ww80)
-	return result.real
+	return round(result.real, 2)
 
 def open_equi_read():
 	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
