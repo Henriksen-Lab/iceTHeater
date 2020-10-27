@@ -48,4 +48,17 @@ def open_equi_read():
 	keithley.close()
 	return get_T(read)
 
-print (open_equi_read())
+def open_arduino_write(t):
+	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	flag = arduino.is_open
+	#print(t)
+	tt = b"t"
+	arduino.write(tt)
+	arduino.close()
+
+while 1:
+	temp = open_equi_read()
+	print(time.asctime(time.localtime(time.time())),"\nTemp is ",temp,"K")
+	time.sleep(1.5)
+	open_arduino_write(temp)
+	time.sleep(0.5)
