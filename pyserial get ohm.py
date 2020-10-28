@@ -91,8 +91,9 @@ def open_arduino_set(t):
 	
 def read_arduino(arduino):
 	while 1:
-		out = arduino.readline()
-		time.sleep(2)
+		out = arduino.read(100).decode('ISO-8859-1')
+		print(out)
+		time.sleep(1.3)
 
 
 set_temp = Decimal(float(input("Set_temp:"))).quantize(Decimal("0.00"))
@@ -115,7 +116,7 @@ while(True):
 	temp = open_equi_read()
 	plt.plot(time.time()-t_now,temp,'.r')
 	plt.pause(0.1)
-	print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
+	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
 	open_arduino_set(set_temp)
 	open_arduino_write(temp)
 	
