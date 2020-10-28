@@ -5,6 +5,7 @@ import cmath
 from decimal import Decimal
 import matplotlib.pyplot as plt
 
+
 def get_T(R):
 	c1=[5.5582108,-6.41962,2.86239,-1.059453,0.328973,0.081621997,0.012647,0.00088100001,-0.001982,0.00099099998]
 	c14=[43.140221,-38.004025,8.0877571,-0.913351,0.091504,-0.0036599999,-0.0060470002]
@@ -67,6 +68,7 @@ def open_arduino_write(t):
 	else:
 		tt = "CG "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
+	time.sleep(2)
 	'''for x in(bytes(tt,'utf-8')):
 		print (x)'''
 	arduino.close()
@@ -84,24 +86,20 @@ def open_arduino_set(t):
 	arduino.write(bytes(tt,'utf-8'))
 	'''for x in(bytes(tt,'utf-8')):
 			print (x)'''
+	time.sleep(2)
 	arduino.close()
 	
 def read_arduino():
 	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
 	flag = arduino.is_open
-	out = ''
-	read = 0
-	while arduino.inWaiting() > 0:
-		out += arduino.read().decode("ascii")
-	if out != '':
-		read = out
-	print (out)
+	time.sleep(5)
+	read = arduino.read(200).decode("utf-8")
 	arduino.close()
-	
-	
-set_temp = Decimal(float(input("Set temp:"))).quantize(Decimal("0.00"))
-open_equi_initial()
+	return read
 
+
+set_temp = Decimal(float(input("Set_temp:"))).quantize(Decimal("0.00"))
+open_equi_initial()
 plt.ion()
 plt.figure(1)
 plt.title("Set point = " + str(set_temp) + "K")
@@ -109,12 +107,18 @@ plt.xlabel("time(s)")
 plt.ylim(0,310)
 plt.ylabel("Temp(K)")
 t_now = time.time()
-while 1:
+		
+	
+open_arduino_set(set_temp)
+	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")	
+while(True):
 	temp = open_equi_read()
-	open_arduino_set(set_temp)
-	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
 	plt.plot(time.time()-t_now,temp,'.r')
-	plt.pause(0.5)
+	plt.pause(0.1)
 	open_arduino_write(temp)
-	time.sleep(0.5)
-	#read_arduino()
+	print(read_arduino())	
+
+	
+	
+
+

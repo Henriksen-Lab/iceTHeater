@@ -102,8 +102,8 @@ void loop()
 //Low frequency PWM for the solid state relay
 void slowPWM(double setPer)
 {
-  /* 
-   double windowsize = 1000;
+  
+  double windowsize = 1000;
   double onTime = windowsize * setPer / 100;
   now = millis();
   if (now >= then + onTime && heaterState) {
@@ -116,7 +116,6 @@ void slowPWM(double setPer)
     heaterState = true;
     then = now;  
   }
-  */
 }
 void manageSerial(){
   //Valid command format "CS ###.##E". Example: "CS 090.30E" for temperature setpoint of 90.30 C
