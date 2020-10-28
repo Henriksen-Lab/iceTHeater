@@ -5,7 +5,25 @@ import cmath
 from decimal import Decimal
 import matplotlib.pyplot as plt
 import threading
+import tkinter
 
+def get_set_temp():
+	window = tkinter.Tk()
+	window.title('Set temp')
+	window.geometry('300x100')
+	label = tkinter.Label(window, height=2)
+	label['text']= 'Input set temperature'
+	label.pack()
+	entry = tkinter.Entry(window)
+	entry.pack()
+	def on_click():
+		global value
+		value = entry.get()
+		window.destroy()
+	tkinter.Button(window, text="Input", command = on_click).pack()
+	window.mainloop()
+	return value
+	
 def get_T(R):
 	c1=[5.5582108,-6.41962,2.86239,-1.059453,0.328973,0.081621997,0.012647,0.00088100001,-0.001982,0.00099099998]
 	c14=[43.140221,-38.004025,8.0877571,-0.913351,0.091504,-0.0036599999,-0.0060470002]
@@ -96,11 +114,10 @@ def read_arduino(arduino):
 		time.sleep(1.3)
 
 
-set_temp = Decimal(float(input("Set_temp:"))).quantize(Decimal("0.00"))
+set_temp = Decimal(float(get_set_temp())).quantize(Decimal("0.00"))
 open_equi_initial()
 plt.ion()
 plt.figure(1)
-plt.title("Set point = " + str(set_temp) + "K")
 plt.xlabel("time(s)")
 plt.ylim(0,310)
 plt.ylabel("Temp(K)")
@@ -114,6 +131,7 @@ thread.start()
 	
 while(True):
 	temp = open_equi_read()
+	plt.title("Set point = " + str(set_temp) + "K")
 	plt.plot(time.time()-t_now,temp,'.r')
 	plt.pause(0.1)
 	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
