@@ -4,7 +4,7 @@ import numpy as np
 import cmath
 from decimal import Decimal
 import matplotlib.pyplot as plt
-
+import threading
 
 def get_T(R):
 	c1=[5.5582108,-6.41962,2.86239,-1.059453,0.328973,0.081621997,0.012647,0.00088100001,-0.001982,0.00099099998]
@@ -68,7 +68,7 @@ def open_arduino_write(t):
 	else:
 		tt = "CG "+ str(t) + "E"
 	arduino.write(bytes(tt,'utf-8'))
-	time.sleep(2)
+	time.sleep(1)
 	'''for x in(bytes(tt,'utf-8')):
 		print (x)'''
 	arduino.close()
@@ -86,16 +86,13 @@ def open_arduino_set(t):
 	arduino.write(bytes(tt,'utf-8'))
 	'''for x in(bytes(tt,'utf-8')):
 			print (x)'''
-	time.sleep(2)
+	time.sleep(1)
 	arduino.close()
 	
-def read_arduino():
-	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
-	flag = arduino.is_open
-	time.sleep(5)
-	read = arduino.read(200).decode("utf-8")
-	arduino.close()
-	return read
+def read_arduino(arduino):
+	while 1:
+		out = arduino.readline()
+		time.sleep(2)
 
 
 set_temp = Decimal(float(input("Set_temp:"))).quantize(Decimal("0.00"))
@@ -108,15 +105,20 @@ plt.ylim(0,310)
 plt.ylabel("Temp(K)")
 t_now = time.time()
 		
+
+
+arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=0)
+thread = threading.Thread(target=read_arduino, args=(arduino,))
+thread.start()	
 	
-open_arduino_set(set_temp)
-	#print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")	
 while(True):
 	temp = open_equi_read()
 	plt.plot(time.time()-t_now,temp,'.r')
 	plt.pause(0.1)
+	print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
+	open_arduino_set(set_temp)
 	open_arduino_write(temp)
-	print(read_arduino())	
+	
 
 	
 	

@@ -95,8 +95,8 @@ void loop()
     Serial.print(" The setpoint is: ");
     Serial.print(Setpoint);
     Serial.print(". The current temperature is: ");
-    Serial.println(GetPoint);
-    */
+    Serial.println(GetPoint);   
+    */ 
   }
 }
 //Low frequency PWM for the solid state relay
