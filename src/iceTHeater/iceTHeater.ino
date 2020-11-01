@@ -6,10 +6,10 @@ double Setpoint, GetPoint, Input, Output;
 
 //Specify the links and initial tuning parameters
 //No idea if the default Kp Ki Kd are correct
-double aggKp = 4, aggKi = .2, aggKd = 1; 
-//double aggKp = .1, aggKi = .1, aggKd = 10;
+
+double aggKp = .1, aggKi = .1, aggKd = 10;
 double consKp = 1, consKi = .05, consKd = 0.25;
-//double consKp = 50, consKi = .1, consKd = 1;
+
 
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
@@ -51,8 +51,8 @@ int i = 0;
 void setup()
 {
   pinMode(RelayPin, OUTPUT);
-  Setpoint = 166;
-  GetPoint = 165;
+  Setpoint = 0;
+  GetPoint = 0;
   Input = GetPoint;
   myPID.SetOutputLimits(0, 100);
   //Turn the PID on
@@ -103,17 +103,17 @@ void loop()
 void slowPWM(double setPer)
 {
   
-  double windowsize = 1000;
+  double windowsize = 3000;
   double onTime = windowsize * setPer / 100;
   now = millis();
-  if (now >= then + onTime && heaterState) {
-    //Turn heater off
-    digitalWrite(RelayPin, LOW);
-    heaterState = false;
-  } else if (now >= then + windowsize) {
+  if (now >= then + windowsize-onTime && heaterState==false) {
     //Turn heater on
     digitalWrite(RelayPin, HIGH);
     heaterState = true;
+  } else if (now >= then + windowsize && heaterState==true) {
+    //Turn heater off
+    digitalWrite(RelayPin, LOW);
+    heaterState = false;
     then = now;  
   }
 }
@@ -258,13 +258,17 @@ void manageSerial(){
         {
         case tempSet:
           Setpoint = serialBufferReading;
+          /*
           Serial.print("Setpoint set to: ");
           Serial.println(Setpoint);
+          */
           break;
         case tempGet:
           GetPoint = serialBufferReading;
+          /*
           Serial.print("GetPoint set to: ");
           Serial.println(GetPoint);
+          */
           break;
         default:
           break;
