@@ -1,11 +1,11 @@
-import serial
-import time
+#Written by Shilling Du 11/1/2020
+import serial, sys, time, cmath, threading, tkinter
 import numpy as np
-import cmath
 from decimal import Decimal
 import matplotlib.pyplot as plt
-import threading
-import tkinter
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from multiprocessing import Process
+
 
 	
 def get_T(R):
@@ -47,7 +47,7 @@ def open_equi_read():
 	
 	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
 	keithley.write(b":MEAS:VOLTage:DC?\r\n")
-	time.sleep(0.5)
+	time.sleep(1.5)
 	out = ''
 	read = 0
 	while keithley.inWaiting() > 0:
@@ -60,15 +60,17 @@ def open_equi_read():
 	return get_T(read)
 	
 def open_arduino_write(t):
-	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	if 10<t<100:
+	if 100<=t<1000:
+		tt = "CG "+ str(t) + "E"
+	elif 10<=t<100:
 		tt = "CG 0"+ str(t) + "E"
 	elif t<10:
 		tt = "CG 00"+ str(t) + "E"
 	else:
-		tt = "CG "+ str(t) + "E"
+		print("Temp out of range")
 	arduino.write(bytes(tt,'utf-8'))
 	time.sleep(0.5)
 	'''for x in(bytes(tt,'utf-8')):
@@ -76,20 +78,21 @@ def open_arduino_write(t):
 	arduino.close()
 	
 def initial_arduino():
-	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
 	flag = arduino.is_open
 	tt = "CG 000E"
 	ttt = "CS 000E"
 	arduino.write(bytes(tt,'utf-8'))
 	time.sleep(0.1)
 	arduino.write(bytes(ttt,'utf-8'))
+	time.sleep(0.1)
 	arduino.close()
 
 def open_arduino_set(t):
-	arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=1)
+	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
 	flag = arduino.is_open
 	#print(t)
-	if 10<t<100:
+	if 10<=t<100:
 		tt = "CS 0"+ str(t) + "E"
 	elif t<10:
 		tt = "CS 00"+ str(t) + "E"
@@ -106,51 +109,79 @@ def read_arduino(arduino):
 		out = arduino.read(100).decode('ISO-8859-1')
 		#print(out) # Test Arduino connection
 		time.sleep(1.3)
-
-arduino = serial.Serial('/dev/tty.usbmodem14301',9600,timeout=0)
-thread = threading.Thread(target=read_arduino, args=(arduino,))
-thread.start()
-
-
-def get_set_temp():
+		
+def update():
+	global set_temp, t_now, update_flag
+	while 1:
+		if update_flag:
+			open_equi_initial()
+			initial_arduino()
+			plt.ion()
+			plt.figure(1)
+			plt.xlabel("time(s)")
+			#plt.ylim([0,310])
+			plt.ylabel("Temp(K)")
+			t_now = time.time()
+			pretemp =0
+			while 1:
+				temp = open_equi_read()
+				open_arduino_set(set_temp)
+				if abs(temp-pretemp)<100 or pretemp ==0:
+					open_arduino_write(temp)
+					plt.plot(time.time()-t_now,temp,'.r')
+					plt.xlim([0,time.time()-t_now+1])
+					plt.pause(0.5)
+					print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
+					pretemp = temp
+				else:
+					print(time.asctime(time.localtime(time.time())),"\nError when read")
+			plt.close()
+		else:
+			time.sleep(1)
+			print("Arduino disconeected")
+			
+def pop_window():
 	window = tkinter.Tk()
 	window.title('Set temp')
-	window.geometry('300x100')
-	label = tkinter.Label(window, height=2)
-	label['text']= 'Input set temperature'
-	label.pack()
+	window.geometry('300x200')
+	tkinter.Label(window,text ='Input set temperature', height=2).pack()
 	entry = tkinter.Entry(window)
 	entry.pack()
 	def on_click():
-		global value
+		global set_temp, update_flag
 		value = entry.get()
+		set_temp = Decimal(float(value)).quantize(Decimal("0.00"))
+		plt.title("Set point = " + str(set_temp) + "K")
+		update_flag = True
+		time.sleep(1)
 		window.destroy()
 	tkinter.Button(window, text="Input", command = on_click).pack()
+	def exit():
+		global update_flag
+		update_flag = False
+		initial_arduino()
+		time.sleep(1)
+		thread2.exit()		
+	tkinter.Label(window,text ="Plese press here to Exit", height=2).pack()
+	tkinter.Button(window, text="Exit", command = exit).pack()
 	window.mainloop()
-	return value
-
-set_temp = Decimal(float(get_set_temp())).quantize(Decimal("0.00"))
-open_equi_initial()
-initial_arduino()
-plt.ion()
-plt.figure(1)
-plt.xlabel("time(s)")
-#plt.ylim([0,310])
-plt.ylabel("Temp(K)")
-t_now = time.time()
-
-while(True):
-	temp = open_equi_read()
-	plt.title("Set point = " + str(set_temp) + "K")
-	plt.plot(time.time()-t_now,temp,'.r')
-	plt.xlim([0,time.time()-t_now+1])
-	plt.pause(0.1)
-	print(time.asctime(time.localtime(time.time())),"\nTemp =",temp,"K", ", Set point =", set_temp,"K")
-	open_arduino_set(set_temp)
-	open_arduino_write(temp)
 	
+			
+arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=0)
+thread = threading.Thread(target=read_arduino, args=(arduino,))
+thread.start()
+time.sleep(0.1)
+set_temp = 0
+update_flag = False
+stop_thread = False
+process2 = Process(target=pop_window())
+process2.start()
+process1 = Process(target=update())
+process1.start()
+process1.join()
+process2.join()
 
-	
-	
+
+
 
 
