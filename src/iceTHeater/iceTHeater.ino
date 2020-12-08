@@ -10,8 +10,9 @@ double Setpoint, GetPoint, Input, Output;
 
 //double aggKp = .1, aggKi = .1, aggKd = 10;
 //double consKp = 1, consKi = .05, consKd = 0.25;
-double aggKp = 0.2, aggKi = 0.05, aggKd = 0;
-double consKp = 0.2, consKi = 0.05, consKd = 0;
+double aggKp = 10, aggKi = 0.26, aggKd = 1;
+double consKp = 0.20, consKi = 0.35, consKd = 0.03;
+double lowKp = 0.19, lowKi = 0.35, lowKd = 0.03;
 
 
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
@@ -72,23 +73,19 @@ void loop()
   //  }
   //else
   //{
-    computeNow = millis();
-    if (computeNow >= computeThen + 3000)
-    {
-      if (Input - Setpoint >= 0)
-      {
-        //Down parameters
-        myPID.SetTunings(consKp, consKi, consKd);
+  computeNow = millis();
+  if (computeNow >= computeThen + 3000){
+    if (Setpoint < 15){
+      myPID.SetTunings(lowKp, lowKi, lowKd);
       }
-  
-      else
-      {
-       //Up parameters
-       myPID.SetTunings(aggKp, aggKi, aggKd);
-       }
+    else if (Setpoint < 30)
+    {
+     myPID.SetTunings(consKp, consKi, consKd);
+    }
+    else {myPID.SetTunings(aggKp, aggKi, aggKd);}
      myPID.Compute();
      computeThen = computeNow;  
-     }
+   }
   slowPWM(Output);
   //}
   

@@ -44,7 +44,6 @@ def open_equi_initial():
 	keithley.close()
 
 def open_equi_read():
-	
 	keithley = serial.Serial('/dev/tty.usbserial-PX4TWTWW',9600,timeout=1)
 	keithley.write(b":MEAS:VOLTage:DC?\r\n")
 	time.sleep(1.5)
@@ -60,7 +59,8 @@ def open_equi_read():
 	return get_T(read)
 	
 def open_arduino_write(t):
-	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
+	global arduino_name
+	arduino = serial.Serial(ardunio_name,9600,timeout=0) 
 	flag = arduino.is_open
 	#print(t)
 	if 100<=t<1000:
@@ -78,7 +78,8 @@ def open_arduino_write(t):
 	arduino.close()
 	
 def initial_arduino():
-	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
+	global arduino_name
+	arduino = serial.Serial(ardunio_name,9600,timeout=0)
 	flag = arduino.is_open
 	tt = "CG 000E"
 	ttt = "CS 000E"
@@ -89,7 +90,8 @@ def initial_arduino():
 	arduino.close()
 
 def open_arduino_set(t):
-	arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=1)
+	global arduino_name
+	arduino = serial.Serial(ardunio_name,9600,timeout=0)
 	flag = arduino.is_open
 	#print(t)
 	if 10<=t<100:
@@ -166,8 +168,8 @@ def pop_window():
 	tkinter.Button(window, text="Exit", command = exit).pack()
 	window.mainloop()
 	
-			
-arduino = serial.Serial('/dev/tty.usbmodem14501',9600,timeout=0)
+ardunio_name = '/dev/tty.usbmodem14301'
+arduino = serial.Serial(ardunio_name,9600,timeout=0)
 thread = threading.Thread(target=read_arduino, args=(arduino,))
 thread.start()
 time.sleep(0.1)
