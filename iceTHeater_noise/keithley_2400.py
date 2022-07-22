@@ -91,9 +91,6 @@ def set_voltage_V(address, target_value_V):
 def get_ohm_4pt_2000(address):
     try:
         keithley = rm.open_resource(address)
-        keithley.write("*RST")
-        keithley.write("SYST:BEEP:STAT OFF") # mute the equip from making beeps
-        keithley.write("*cls")
         keithley.write("SENS:FUNC \"FRES\"") # measure 4 wire Resistance for 2000
         keithley.write("SENS:FRES:RANG:AUTO 1") # Auto range
         keithley.write("FORM:ELEM FRES") # only output R
@@ -118,16 +115,16 @@ def get_ohm_2pt_2400(address):
         keithley.close()
     return numerical_data
 
-def get_voltage_2000(address):
+def get_voltage_keithley(address):
     try:
         keithley = rm.open_resource(address)
-        keithley.write("*RST")
-        keithley.write("SYST:BEEP:STAT 0") # mute the equip from making beeps
-        keithley.write("*cls")
         keithley.write("SENS:FUNC \'volt\'") # set volt
         keithley.write("SENS:volt:RANG:AUTO 1") # Auto range
+        keithley.write("FORM:ELEM VOLT")
         string_data = keithley.query("READ?")
         numerical_data = float(string_data)
     finally:
         keithley.close()
     return numerical_data
+
+print(get_voltage_keithley('GPIB0::25::INSTR'))

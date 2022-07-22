@@ -30,19 +30,25 @@ void loop()
 //Low frequency PWM for the solid state relay
 void slowPWM(double setPer)
 {
-  double windowsize = 10000;
+  double windowsize = 3000;
   double onTime = windowsize * setPer / 100;
   now = millis();
-  if (now >= then + windowsize-onTime && heaterState==false) {
+  if(now < then + onTime && heaterState==false) {
     //Turn heater on
     digitalWrite(RelayPin, HIGH);
     heaterState = true;
-  } else if (now >= then + windowsize && heaterState==true) {
+  }  
+  else if(now > then + onTime && heaterState==true && now< then + windowsize) {
     //Turn heater off
     digitalWrite(RelayPin, LOW);
     heaterState = false;
-    then = now;  
   }
+  else if(now>= then + windowsize){
+    then = now;
+    //Turn heater off
+    digitalWrite(RelayPin, LOW);
+    heaterState = false; 
+  } 
 }
 
 void recvWithStartEndMarkers() {
