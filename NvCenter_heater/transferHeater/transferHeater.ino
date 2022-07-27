@@ -24,7 +24,9 @@ double Setpoint, Input, Output;
 //No idea if the default Kp Ki Kd are correct
 double aggKp=5, aggKi=0, aggKd=0;
 double consKp=5, consKi=0, consKd=0;
-
+const byte numChars = 32;
+char receivedChars[numChars];
+boolean newData = false;
 PID myPID(&Input, &Output, &Setpoint, consKp, consKi, consKd, DIRECT);
 
 unsigned long now = millis();
@@ -69,6 +71,7 @@ void setup() {
 }
 
 void loop() {
+  recvWithStartEndMarkers();
   computeNow = millis();
   if (computeNow >= computeThen + 200) {
     Input = readRTD();
@@ -85,99 +88,9 @@ void loop() {
     //Serial.print("Output is: ");
     //Serial.println(Output);
     computeThen = computeNow;
-  } 
-  SerialSend();
-  slowPWM(Output);
-  
-  //Valid command format "CS ###.#E". Example: "CS 090.3E" for temperature setpoint of 90.3 C
-  if (Serial.available() > 0) {
-    switch (state) {
-      case idle:
-        //Look for magic number C
-        if (Serial.read() == 67) {
-          state = magic;
-        }
-        break;
-      case magic:
-      //Look for command type
-        if (Serial.read() == 83) {
-          state = tempCom;
-        } else {
-          state = idle;
-        }
-        break;
-      //Look for space
-      case tempCom:
-        if (Serial.read() == 32) {
-          state = d1;
-        } else {
-          state = idle;
-        }
-        break;
-      //Look for digits with validation
-      case d1:
-        i = Serial.read();
-        if (i >= 48 && i <= 57) {
-          unconfirmedSetpoint += (i - 48) * 100;
-          state = d2;
-        } else {
-          state = idle;
-          unconfirmedSetpoint = 0;
-        }
-        break;
-      case d2:
-        i = Serial.read();
-        if (i >= 48 && i <= 57) {
-          unconfirmedSetpoint += (i - 48) * 10;
-          state = d3;
-        } else {
-          state = idle;
-          unconfirmedSetpoint = 0;
-        }
-        break;
-      case d3:
-        i = Serial.read();
-        if (i >= 48 && i <= 57) {
-          unconfirmedSetpoint += (i - 48);
-          state = d4;
-        } else {
-          state = idle;
-          unconfirmedSetpoint = 0;
-        }
-        break;
-      case d4:
-        if (Serial.read() == 46) {
-          state = d5;
-        } else {
-          state = idle;
-          unconfirmedSetpoint = 0;
-        }
-        break;
-      case d5:
-        i = Serial.read();
-        if (i >= 48 && i <= 57) {
-          unconfirmedSetpoint += (i - 48) * 0.1;
-          state = finalizing;
-        } else {
-          state = idle;
-          unconfirmedSetpoint = 0;
-        }
-        break;
-      //Look for exit code E
-      case finalizing:
-        if (Serial.read() == 69) {
-          Setpoint = unconfirmedSetpoint;
-          Serial.print("Setpoint set to: ");
-          Serial.println(Setpoint);
-          unconfirmedSetpoint = 0;
-          state = idle;
-        } else {
-          unconfirmedSetpoint = 0;
-          state = idle;
-        }
-        break;
-    }
   }
+  slowPWM(Output);
+  SerialSend();
   
   //Display status message
   statusNow = millis();
@@ -251,15 +164,88 @@ double readRTD() {
   return temperature;
 }
 
+
+void recvWithStartEndMarkers() {
+    static boolean recvInProgress = false;
+    static byte ndx = 0;
+    char startMarker = 'k';
+    char endMarker_1 = 'p';
+    char endMarker_2 = 'i';
+    char endMarker_3 = 'd';
+    char endMarker_4 = 't';
+    
+    char rc;
+    newData = false;
+    
+ 
+    while (Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+        if (rc == startMarker && recvInProgress == false) {
+            recvInProgress = true;
+        }
+        else if (rc == endMarker_1 && recvInProgress == true) {
+                receivedChars[ndx] = '\0'; // terminate the string
+                recvInProgress = false;
+                ndx = 0;
+                newData = true;
+                aggKp = atof(receivedChars);
+                consKp = atof(receivedChars);
+            }
+        else if(rc == endMarker_2 && recvInProgress == true) {
+                receivedChars[ndx] = '\0'; // terminate the string
+                recvInProgress = false;
+                ndx = 0;
+                newData = true;
+                aggKi = atof(receivedChars);
+                consKi = atof(receivedChars);
+            }
+        else if (rc == endMarker_3 && recvInProgress == true) {
+                receivedChars[ndx] = '\0'; // terminate the string
+                recvInProgress = false;
+                ndx = 0;
+                newData = true;
+                aggKd = atof(receivedChars);
+                consKd = atof(receivedChars);
+            }
+        else if (rc == endMarker_4&& recvInProgress == true) {
+                receivedChars[ndx] = '\0'; // terminate the string
+                recvInProgress = false;
+                ndx = 0;
+                newData = true;
+                Setpoint = atof(receivedChars);
+            }
+        else if (recvInProgress == true) {
+            receivedChars[ndx] = rc;
+            ndx++;
+            if (ndx >= numChars) {
+              ndx = numChars - 1;
+              }
+            }
+        else{
+            recvInProgress = false;
+        }
+        }
+        
+    }
+
+
+
 void SerialSend()
 {
     Serial.print("<");
     Serial.print(Input);
-    Serial.print(">");
+    Serial.println(">");
     Serial.print("(");
     Serial.print(Setpoint);
-    Serial.print(")");
+    Serial.println(")");
     Serial.print("{");
     Serial.print(Output);
-    Serial.print("}");
+    Serial.println("}");
+    Serial.print("$");
+    Serial.print(aggKp);
+    Serial.print(',');
+    Serial.print(aggKi);
+    Serial.print(',');
+    Serial.print(aggKd);
+    Serial.println("&");
 }
