@@ -14,8 +14,8 @@ from arduino_communication import arduino_set, arduino_read, arduino_read_set, a
 class Myinfo:
     def __init__(self):
         #Input the file dir and address here
-        self.setpoint = 30.0
-        self.dir = r'C:\Users\Osmium\Documents\GitHub\iceTHeater\NvCenter_heater\Data'
+        self.setpoint = 22.0
+        self.dir = r'C:\Users\Osmium\Documents\GitHub\iceTHeater\NvCenter_heater\Data\Aug1PIDTuning'
 
         #Initialize the variables
         self.time_interval = 1
@@ -56,13 +56,18 @@ class Myinfo:
             self.read()
       #      print(time.asctime(time.localtime(time.time())), "\nTemp =", self.reading, "C", ", Set point =",
       #            self.setpoint_read, "C")
-            print('temp = ', self.reading)
-
+            print(f"Setpoint = {self.setpoint_read}C, Output = {self.Output_read}%, PID value = {self.pid_read}")
             plt.title(f"Setpoint = {self.setpoint_read}C, Output = {self.Output_read}%, PID value = {self.pid_read}")
             plt.plot(self.timenow - t_now, self.reading, '.r')
             plt.xlim([0, self.timenow - t_now + 1])
             plt.pause(0.5)
             time.sleep(self.time_interval)
+            np.savetxt(
+                pid.dir +'\\'+ 'temp.txt',
+                np.column_stack(([a - self.timelog[0] for a in self.timelog], self.templog)), delimiter='\t',
+                header=f"\Setpoint = {pid.setpoint_read}C, Output = {pid.Output_read}%, PID value = {pid.pid_read}"+ '\n'
+                       +datetime.now().strftime('%Y%m%d') + '\n' + "time\t\t\ttemp\t\t\t")
+            print("data saved")
 
     def run_single(self):
         t_now = time.time()
@@ -70,17 +75,18 @@ class Myinfo:
         self.write_pid()
         self.read()
         print(time.asctime(time.localtime(time.time())), "\nTemp =", self.reading, "C", ", Set point =", self.setpoint_read, "C")
-        print('temp = ', self.reading)
+        print(f"Setpoint = {self.setpoint_read}C, Output = {self.Output_read}%, PID value = {self.pid_read}")
+        print('temp now is', self.reading)
         time.sleep(self.time_interval)
 
 
 
 def plot_save(x, y, order):
     fg1 = plt.figure()
-    plt.plot([a - x[0] for a in x], y)
+    plt.plot([a - x[0] for a in x], y,'.r')
     plt.xlabel('time(s)')
     plt.ylabel('Temp(K)')
-    plt.title(f"setpoint = {pid.setpoint}C")
+    plt.title(f"Setpoint = {pid.setpoint_read}C, Output = {pid.Output_read}%, PID value = {pid.pid_read}")
     fg1.savefig(
         pid.dir + f"\Setpoint = {pid.setpoint_read}C, Output = {pid.Output_read}%, PID value = {pid.pid_read}.{order}.jpg",
         bbox_inches='tight', dpi=150)
@@ -145,14 +151,18 @@ def t1():
 arduino_address = 'COM10'
 pid = Myinfo()
 ''' if you want to do it manually'''
+
 pop_window() # if you want to run it continuously and want change temp during the process, run this pop window func
 
-#''' if you want to tune single parameter and have your graph and data saved'''
-#for kp in range (0,100):
- #   pid.pid_value = 'k'+str(kp/10)+'p'
-  #  for t in range (0,30*6):
-  #      time.sleep(0.1)
-  #      pid.run_single()
-  #  plot_save(pid.timelog, pid.templog, kp)
-  #  pid.timelog = []
-  #  pid.templog = []
+''' if you want to tune single parameter and have your graph and data saved'''
+''''''
+for kp in np.linspace(1.30,1.31,num=1):
+    pid.pid_value = 'k'+str(kp)+'p'
+
+    for t in range (0,30*30):
+        time.sleep(0.1)
+        pid.run_single()
+    plot_save(pid.timelog, pid.templog, kp)
+    pid.timelog = []
+    pid.templog = []
+''''''
