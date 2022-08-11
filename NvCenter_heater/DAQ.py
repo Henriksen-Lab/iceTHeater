@@ -14,7 +14,7 @@ from arduino_communication import arduino_set, arduino_read, arduino_read_set, a
 class Myinfo:
     def __init__(self):
         #Input the file dir and address here
-        self.setpoint = 22.0
+        self.setpoint = 34
         self.dir = r'C:\Users\Osmium\Documents\GitHub\iceTHeater\NvCenter_heater\Data\Aug1PIDTuning'
 
         #Initialize the variables

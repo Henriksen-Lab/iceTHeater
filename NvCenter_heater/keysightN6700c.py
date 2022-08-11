@@ -14,9 +14,9 @@ def set_voltage(address,target_value_V):
     finally:
         keysight6700.close()
 
-step_size = 0.005
-start_voltage = 70
-end_voltage = 80
+step_size = 0.05
+start_voltage = 71
+end_voltage = 77
 number_of_steps = int(np.floor(abs(end_voltage-start_voltage)/step_size))+1
 dir = r'C:\Users\Osmium\Documents\GitHub\iceTHeater\NvCenter_heater\Data\voltage sweeping'
 
