@@ -12,6 +12,7 @@ def infiniVision_get_counter(address= 'USB0::0x0957::0x1790::MY54230292::INSTR')
         infiniVision.write(":MEASure:CLEar")
         string_data = infiniVision.query(":MEASure:COUNter?")
         numerical_data = float(string_data)
+        time.sleep(0.1)
     finally:
         infiniVision.close()
     return numerical_data
